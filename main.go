@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/minoplhy/chibisafe_netstorage_middleman/src/handler"
 )
 
@@ -92,11 +91,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Cannot load .env file!")
-	}
-
 	Chibisafe_basepath := os.Getenv("CHIBISAFE_BASEPATH")
 	Host := os.Getenv("HOST")
 
