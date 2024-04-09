@@ -92,19 +92,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	Chibisafe_basepath := os.Getenv("CHIBISAFE_BASEPATH")
-	Host := os.Getenv("HOST")
 
 	if Chibisafe_basepath == "" {
 		log.Fatal("CHIBISAFE_BASEPATH environment is not set!")
-	}
-	if Host == "" {
-		Host = "127.0.0.1:4000"
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/upload", uploadHandler)
 
-	if err := http.ListenAndServe(Host, mux); err != nil {
+	if err := http.ListenAndServe(":4040", mux); err != nil {
 		log.Fatal(err)
 	}
 }
