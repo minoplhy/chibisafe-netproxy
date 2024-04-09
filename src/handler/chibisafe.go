@@ -107,7 +107,7 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	// Set appropriate headers for the file
 	req.Header.Set("Content-Type", ContentType)
 
-	// clear memory for others process to use
+	// clear memory for others internal process to use
 	defer buffer.Reset()
 
 	// Send the request
