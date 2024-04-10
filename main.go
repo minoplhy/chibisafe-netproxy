@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/minoplhy/chibisafe_netstorage_middleman/src/handler"
 )
@@ -22,17 +25,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		maxUploadSize = 10 * 1024 * 1024 // 10 MB
 	}
 
-	// Open or create a file for appending logs
-	log_file, err := os.OpenFile("activity.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer log_file.Close()
-	log.SetOutput(log_file)
-
 	if r.Method != "POST" {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusMethodNotAllowed, "Method not allowed"), http.StatusMethodNotAllowed)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Method not allowed")
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Method not allowed")
 		return
 	}
 
@@ -40,14 +35,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	API_Key := r.Header.Get("x-api-key")
 	if API_Key == "" {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "X-api-key is empty!"), http.StatusBadRequest)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "X-api-key is empty!")
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "X-api-key is empty!")
 		return
 	}
 
 	// Validate x-api-key
 	if !handler.Check_API_Key(Chibisafe_basepath, API_Key) {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusUnauthorized, "Failure to validate X-API-Key"), http.StatusUnauthorized)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Failure to validate X-API-Key")
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Failure to validate X-API-Key")
 		return
 	}
 
@@ -58,11 +53,11 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "http: request body too large" {
 			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
-			handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Request Body is too large!")
+			handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
 			return
 		}
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
 		return
 	}
 
@@ -73,14 +68,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
 		return
 	}
 	defer file.Close()
 
-	handler.LogBuilder("INFO", []string{r.RemoteAddr}, "Received a successful POST")
+	handler.InfoLogBuilder([]string{r.RemoteAddr}, "Received a successful POST")
 	tempfilepath := handler.GetTempFilename(fileHeader.Filename)
-	handler.LogBuilder("INFO", []string{r.RemoteAddr, tempfilepath}, "Successfully obtained temporary Filename")
+	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully obtained temporary Filename")
 	handler.SaveFile(tempfilepath, file)
 	handler.DiscardFile(file)
 
@@ -93,7 +88,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, API_Key, PostData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr, tempfilepath}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr, tempfilepath}, err.Error())
 		return
 	}
 
@@ -101,18 +96,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(chibisafe_post, &chibisafe_Response_Metadata)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{}, err.Error())
+		handler.ErrorLogBuilder([]string{}, err.Error())
 		return
 	}
-	handler.LogBuilder("INFO", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully obtained PUT keys")
+	handler.InfoLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully obtained PUT keys")
 
 	_, err = handler.NetworkStoragePut(chibisafe_Response_Metadata.URL, PostData.ContentType, tempfilepath)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
-	handler.LogBuilder("INFO", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully PUT file to Network Storage")
+	handler.InfoLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully PUT file to Network Storage")
 
 	// Build Struct for PostProcess Json
 	//
@@ -128,7 +123,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, API_Key, PostProcessData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
 
@@ -136,40 +131,56 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(PostProcess, &PostProcessResponse)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.LogBuilder("ERROR", []string{}, err.Error())
+		handler.ErrorLogBuilder([]string{}, err.Error())
 
 		return
 	}
-	handler.LogBuilder("INFO", []string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))
+	handler.InfoLogBuilder([]string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))
 
 	err = handler.DeleteFile(tempfilepath)
 	if err != nil {
-		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
-	handler.LogBuilder("INFO", []string{r.RemoteAddr, tempfilepath}, "Successfully Deleted Temporary file from local disk")
+	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully Deleted Temporary file from local disk")
 	JsonResponse, _ := json.Marshal(PostProcessResponse)
 	fmt.Fprintf(w, "%s", JsonResponse)
 }
 
 func main() {
+	// Open or create a file for appending logs
+	log_file, err := os.OpenFile("activity.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+	}
+	defer log_file.Close()
+
+	// Setup Logging Policy
+	// Multi level writer on logfile and console
+	//
+	// Format : Console -> Human Readable
+	// 			File 	-> Json
+	logger := zerolog.New(zerolog.MultiLevelWriter(log_file, os.Stdout)).With().Timestamp().Logger()
+	logger = logger.Output(io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: "15:04:05"}, log_file))
+	// Set as Global logger :)
+	log.Logger = logger
+
 	Chibisafe_basepath := os.Getenv("CHIBISAFE_BASEPATH")
 	Max_Upload_Size := os.Getenv("MAX_UPLOAD_SIZE")
 
 	if Chibisafe_basepath == "" {
-		log.Fatal("CHIBISAFE_BASEPATH environment is not set!")
+		log.Fatal().Msg("CHIBISAFE_BASEPATH environment is not set!")
 	}
 	if Max_Upload_Size != "" {
 		_, err := strconv.Atoi(Max_Upload_Size)
 		if err != nil {
-			log.Fatal("MAX_UPLOAD_SIZE environment is invaild!")
+			log.Fatal().Msg("MAX_UPLOAD_SIZE environment is invaild!")
 		}
 	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/upload", uploadHandler)
 
 	if err := http.ListenAndServe(":4040", mux); err != nil {
-		log.Fatal(err)
+		log.Fatal().Msg(err.Error())
 	}
 }

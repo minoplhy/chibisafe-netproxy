@@ -2,8 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 func ErrorResponseBuild(StatusCode int64, Message string) string {
@@ -15,8 +16,12 @@ func ErrorResponseBuild(StatusCode int64, Message string) string {
 	return string(Response)
 }
 
-func LogBuilder(Level string, headers []string, message string) {
-	logString := "[" + Level + "]" + " "
-	logString += "[" + strings.Join(headers, "] [") + "]" + " : " + message
-	log.Println(logString)
+func InfoLogBuilder(headers []string, message string) {
+	logString := "[" + strings.Join(headers, "] [") + "]" + " : " + message
+	log.Info().Msgf(logString)
+}
+
+func ErrorLogBuilder(headers []string, message string) {
+	logString := "[" + strings.Join(headers, "] [") + "]" + " : " + message
+	log.Error().Msgf(logString)
 }

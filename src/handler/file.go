@@ -3,11 +3,12 @@ package handler
 import (
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func GetTempFilename(Filename string) string {
@@ -18,13 +19,13 @@ func GetTempFilename(Filename string) string {
 func SaveFile(filename string, file multipart.File) error {
 	err := os.MkdirAll("./uploads", os.ModePerm)
 	if err != nil {
-		log.Panic(err)
+		log.Panic().Msg(err.Error())
 		return err
 	}
 
 	dst, err := os.Create(filename)
 	if err != nil {
-		log.Panic(err)
+		log.Panic().Msg(err.Error())
 		return err
 	}
 
@@ -34,7 +35,7 @@ func SaveFile(filename string, file multipart.File) error {
 	// at the specified destination
 	_, err = io.Copy(dst, file)
 	if err != nil {
-		log.Panic(err)
+		log.Panic().Msg(err.Error())
 		return err
 	}
 	return nil
@@ -43,7 +44,7 @@ func SaveFile(filename string, file multipart.File) error {
 func DeleteFile(filePath string) error {
 	err := os.Remove(filePath)
 	if err != nil {
-		log.Panic(err)
+		log.Panic().Msg(err.Error())
 		return err
 	}
 	return nil
@@ -53,7 +54,7 @@ func DiscardFile(file multipart.File) error {
 	// Clear the data from memory
 	_, err := io.Copy(io.Discard, file)
 	if err != nil {
-		log.Panic(err)
+		log.Panic().Msg(err.Error())
 		return err
 	}
 	return nil
