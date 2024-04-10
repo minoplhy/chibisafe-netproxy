@@ -23,3 +23,11 @@ type UploadProcessResponseMeta struct {
 	UUID string `json:"uuid"`
 	URL  string `json:"url"`
 }
+
+type URLRequest struct {
+	URL           string
+	ContentType   string
+	Method        string
+	ContentLength *int
+	Header        map[string]string
+}
