@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
 func Check_API_Key(Basepath string, accessKey string) bool {
@@ -20,6 +22,8 @@ func Check_API_Key(Basepath string, accessKey string) bool {
 	}
 	resp, err := HTTPNoData(GETStruct)
 	if err != nil {
+		// Boolean is returned. So, no error was allowed to be returned
+		log.Error().Msg(err.Error())
 		return false
 	}
 	defer resp.Body.Close()
