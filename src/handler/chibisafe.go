@@ -9,30 +9,6 @@ import (
 	"os"
 )
 
-type UploadPostMeta struct {
-	Name        string `json:"name"`
-	FileSize    int64  `json:"size"`
-	ContentType string `json:"contentType"`
-}
-
-type UploadResponseMeta struct {
-	URL        string `json:"url"`
-	Identifier string `json:"identifier"`
-	PublicURL  string `json:"publicUrl"`
-}
-
-type UploadProcessMeta struct {
-	Name        string `json:"name"`
-	Identifier  string `json:"identifier"`
-	ContentType string `json:"type"`
-}
-
-type UploadProcessResponseMeta struct {
-	Name string `json:"name"`
-	UUID string `json:"uuid"`
-	URL  string `json:"url"`
-}
-
 func UploadPost(BasePath string, PostData UploadPostMeta, accessKey string) ([]byte, error) {
 	URL := BasePath + "/api/upload"
 	// Convert PostData to JSON
@@ -43,7 +19,7 @@ func UploadPost(BasePath string, PostData UploadPostMeta, accessKey string) ([]b
 	}
 
 	// Create a new request with POST method and request body
-	req, err := http.NewRequest("POST", URL, bytes.NewBuffer(PostDataJson))
+	req, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(PostDataJson))
 	if err != nil {
 		log.Panic(err)
 		return nil, err
@@ -85,19 +61,11 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	}
 	defer file.Close()
 
-	// Create a buffer to store the file contents
-	var buffer bytes.Buffer
-	_, err = io.Copy(&buffer, file)
-	if err != nil {
-		log.Panic(err)
-		return nil, err
-	}
-
 	// Create an HTTP client
 	client := &http.Client{}
 
 	// Create a PUT request with the file contents
-	req, err := http.NewRequest("PUT", URL, &buffer)
+	req, err := http.NewRequest(http.MethodPut, URL, file)
 	if err != nil {
 		log.Panic(err)
 		return nil, err
@@ -107,8 +75,9 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	// Set appropriate headers for the file
 	req.Header.Set("Content-Type", ContentType)
 
-	// clear memory for others internal process to use
-	defer buffer.Reset()
+	// Set ContentLenght
+	filestat, _ := file.Stat()
+	req.ContentLength = filestat.Size()
 
 	// Send the request
 	resp, err := client.Do(req)
@@ -127,7 +96,7 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 		return BodyRead, nil
 	} else {
 		log.Panicf("Output from %s : %d", URL, resp.StatusCode)
-		return nil, nil
+		return nil, err
 	}
 }
 
