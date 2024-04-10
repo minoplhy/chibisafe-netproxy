@@ -90,7 +90,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		FileSize:    fileHeader.Size,
 	}
 
-	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, PostData, API_Key)
+	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, API_Key, PostData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
 		handler.LogBuilder("ERROR", []string{r.RemoteAddr, tempfilepath}, err.Error())
@@ -114,13 +114,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	handler.LogBuilder("INFO", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully PUT file to Network Storage")
 
+	// Build Struct for PostProcess Json
+	//
+	// Name 	   -> original Filename
+	// ContentType -> original Content-Type
+	// Identifier  -> File Identifier ID
 	PostProcessData := handler.UploadProcessMeta{
 		Name:        fileHeader.Filename,
 		ContentType: fileHeader.Header.Get("Content-Type"),
 		Identifier:  chibisafe_Response_Metadata.Identifier,
 	}
 
-	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, PostData.ContentType, chibisafe_Response_Metadata.Identifier, API_Key, PostProcessData)
+	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, API_Key, PostProcessData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
 		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())

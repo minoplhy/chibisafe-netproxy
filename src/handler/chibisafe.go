@@ -27,7 +27,7 @@ func Check_API_Key(Basepath string, accessKey string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func UploadPost(BasePath string, PostData UploadPostMeta, accessKey string) ([]byte, error) {
+func UploadPost(BasePath string, accessKey string, PostData UploadPostMeta) ([]byte, error) {
 	URL := BasePath + "/api/upload"
 	// Convert PostData to JSON
 	PostDataJson, err := json.Marshal(PostData)
@@ -110,7 +110,7 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	}
 }
 
-func UploadProcessPost(BasePath string, ContentType string, Identifier string, accessKey string, PostData UploadProcessMeta) ([]byte, error) {
+func UploadProcessPost(BasePath string, accessKey string, PostData UploadProcessMeta) ([]byte, error) {
 	URL := BasePath + "/api/upload/process"
 	// Convert PostData to JSON
 	PostDataJson, err := json.Marshal(PostData)
@@ -124,10 +124,9 @@ func UploadProcessPost(BasePath string, ContentType string, Identifier string, a
 	}
 
 	POSTStruct := URLRequest{
-		URL:         URL,
-		ContentType: ContentType,
-		Method:      "POST",
-		Header:      headers,
+		URL:    URL,
+		Method: "POST",
+		Header: headers,
 	}
 
 	resp, err := HTTPBytes(POSTStruct, bytes.NewBuffer(PostDataJson))
