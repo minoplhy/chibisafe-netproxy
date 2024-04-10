@@ -51,6 +51,24 @@ func HTTPOSFile(RequestStruct URLRequest, RequestData *os.File) (*http.Response,
 	return resp, nil
 }
 
+// HTTP With no Data sent
+func HTTPNoData(RequestStruct URLRequest) (*http.Response, error) {
+	req, err := http.NewRequest(RequestStruct.Method, RequestStruct.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range RequestStruct.Header {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := HTTPClientDo(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func HTTPClientDo(Request *http.Request) (*http.Response, error) {
 	client := &http.Client{}
 	response, err := client.Do(Request)

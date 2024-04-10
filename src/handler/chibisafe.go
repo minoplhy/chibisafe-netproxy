@@ -8,6 +8,25 @@ import (
 	"os"
 )
 
+func Check_API_Key(Basepath string, accessKey string) bool {
+	URL := Basepath + "/api/user/me"
+	headers := map[string]string{
+		"X-Api-Key": accessKey,
+	}
+	GETStruct := URLRequest{
+		URL:    URL,
+		Header: headers,
+		Method: "GET",
+	}
+	resp, err := HTTPNoData(GETStruct)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK
+}
+
 func UploadPost(BasePath string, PostData UploadPostMeta, accessKey string) ([]byte, error) {
 	URL := BasePath + "/api/upload"
 	// Convert PostData to JSON

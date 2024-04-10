@@ -9,3 +9,4 @@ services:
       - .:/app
     environment:
       - CHIBISAFE_BASEPATH=
+      - MAX_UPLOAD_SIZE=

@@ -31,3 +31,8 @@ type URLRequest struct {
 	ContentLength *int
 	Header        map[string]string
 }
+
+type ErrorResponse struct {
+	StatusCode int64
+	Message    string
+}
