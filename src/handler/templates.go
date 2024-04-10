@@ -1,6 +1,10 @@
 package handler
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"log"
+	"strings"
+)
 
 func ErrorResponseBuild(StatusCode int64, Message string) string {
 	ErrorResponse := ErrorResponse{
@@ -9,4 +13,10 @@ func ErrorResponseBuild(StatusCode int64, Message string) string {
 	}
 	Response, _ := json.Marshal(ErrorResponse)
 	return string(Response)
+}
+
+func LogBuilder(Type string, headers []string, message string) {
+	logString := "[" + Type + "]" + " "
+	logString += "[" + strings.Join(headers, "] [") + "]" + " : " + message
+	log.Println(logString)
 }

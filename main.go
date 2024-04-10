@@ -32,7 +32,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusMethodNotAllowed, "Method not allowed"), http.StatusMethodNotAllowed)
-		log.Printf("[%s] : Method not allowed", r.RemoteAddr)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Method not allowed")
 		return
 	}
 
@@ -40,14 +40,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	API_Key := r.Header.Get("x-api-key")
 	if API_Key == "" {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "X-api-key is empty!"), http.StatusBadRequest)
-		log.Printf("[%s] : X-api-key is empty!", r.RemoteAddr)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "X-api-key is empty!")
 		return
 	}
 
 	// Validate x-api-key
 	if !handler.Check_API_Key(Chibisafe_basepath, API_Key) {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusUnauthorized, "Failure to validate X-API-Key"), http.StatusUnauthorized)
-		log.Printf("[%s] : Failue to validate X-API-Key", r.RemoteAddr)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Failure to validate X-API-Key")
 		return
 	}
 
@@ -58,11 +58,11 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "http: request body too large" {
 			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
-			log.Printf("[ERROR] [%s] : Request Body is too large!", r.RemoteAddr)
+			handler.LogBuilder("ERROR", []string{r.RemoteAddr}, "Request Body is too large!")
 			return
 		}
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] [%s] : %s", r.RemoteAddr, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, err.Error())
 		return
 	}
 
@@ -73,14 +73,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] [%s] : %s", r.RemoteAddr, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr}, err.Error())
 		return
 	}
 	defer file.Close()
 
-	log.Printf("[%s] : Received a successful POST", r.RemoteAddr)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr}, "Received a successful POST")
 	tempfilepath := handler.GetTempFilename(fileHeader.Filename)
-	log.Printf("[%s] [%s] : Successfully obtained temporary Filename", r.RemoteAddr, tempfilepath)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr, tempfilepath}, "Successfully obtained temporary Filename")
 	handler.SaveFile(tempfilepath, file)
 	handler.DiscardFile(file)
 
@@ -93,7 +93,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, PostData, API_Key)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
-		log.Printf("[ERROR] [%s] [%s] : %s", r.RemoteAddr, tempfilepath, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr, tempfilepath}, err.Error())
 		return
 	}
 
@@ -101,18 +101,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(chibisafe_post, &chibisafe_Response_Metadata)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] %s", err)
+		handler.LogBuilder("ERROR", []string{}, err.Error())
 		return
 	}
-	log.Printf("[%s] [%s] [%s] : Successfully obtained PUT keys", r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully obtained PUT keys")
 
 	_, err = handler.NetworkStoragePut(chibisafe_Response_Metadata.URL, PostData.ContentType, tempfilepath)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] [%s] [%s] [%s] : %s", r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
-	log.Printf("[%s] [%s] [%s] : Successfully PUT file to Network Storage", r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully PUT file to Network Storage")
 
 	PostProcessData := handler.UploadProcessMeta{
 		Name:        fileHeader.Filename,
@@ -123,7 +123,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, PostData.ContentType, chibisafe_Response_Metadata.Identifier, API_Key, PostProcessData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] [%s] [%s] [%s] : %s", r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
 
@@ -131,17 +131,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(PostProcess, &PostProcessResponse)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		log.Printf("[ERROR] %s", err)
+		handler.LogBuilder("ERROR", []string{}, err.Error())
+
 		return
 	}
-	log.Printf("[%s] [%s] [%s] : Successfully Processed Response with UUID: %s", r.RemoteAddr, PostProcessResponse.Name, tempfilepath, PostProcessResponse.UUID)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))
 
 	err = handler.DeleteFile(tempfilepath)
 	if err != nil {
-		log.Printf("[ERROR] [%s] [%s] [%s] : %s", r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath, err)
+		handler.LogBuilder("ERROR", []string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
-	log.Printf("[%s] [%s] : Successfully Deleted Temporary file from local disk", r.RemoteAddr, tempfilepath)
+	handler.LogBuilder("INFO", []string{r.RemoteAddr, tempfilepath}, "Successfully Deleted Temporary file from local disk")
 	JsonResponse, _ := json.Marshal(PostProcessResponse)
 	fmt.Fprintf(w, "%s", JsonResponse)
 }
