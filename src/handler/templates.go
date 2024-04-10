@@ -15,8 +15,8 @@ func ErrorResponseBuild(StatusCode int64, Message string) string {
 	return string(Response)
 }
 
-func LogBuilder(Type string, headers []string, message string) {
-	logString := "[" + Type + "]" + " "
+func LogBuilder(Level string, headers []string, message string) {
+	logString := "[" + Level + "]" + " "
 	logString += "[" + strings.Join(headers, "] [") + "]" + " : " + message
 	log.Println(logString)
 }
