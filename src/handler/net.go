@@ -1,8 +1,15 @@
 package handler
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 func IsInternalIP(ip string) bool {
+
+	parts := strings.Split(ip, ":")
+	ip = parts[0]
+
 	// Parse the IP address
 	ipAddress := net.ParseIP(ip)
 	if ipAddress == nil {
@@ -18,7 +25,7 @@ func IsInternalIP(ip string) bool {
 	for _, internalRange := range internalRanges {
 		_, ipNet, err := net.ParseCIDR(internalRange)
 		if err != nil {
-			return false
+			continue
 		}
 
 		if ipNet.Contains(ipAddress) {
