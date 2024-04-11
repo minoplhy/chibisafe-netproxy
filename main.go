@@ -90,8 +90,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		"Content-Type": "application/json",
 	}
 
-	if handler.IsInternalIP(r.RemoteAddr) {
-		UploadHeaders["X-Real-IP"] = r.RemoteAddr
+	if r.Header.Get("X-Real-IP") != "" && handler.IsInternalIP(r.RemoteAddr) {
+		UploadHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}
 
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, UploadHeaders, PostData)
@@ -134,8 +134,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		"Content-Type": "application/json",
 	}
 
-	if handler.IsInternalIP(r.RemoteAddr) {
-		ProcessHeaders["X-Real-IP"] = r.RemoteAddr
+	if r.Header.Get("X-Real-IP") != "" && handler.IsInternalIP(r.RemoteAddr) {
+		ProcessHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}
 
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, ProcessHeaders, PostProcessData)
