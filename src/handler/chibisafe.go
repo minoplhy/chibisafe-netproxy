@@ -31,17 +31,12 @@ func Check_API_Key(Basepath string, accessKey string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func UploadPost(BasePath string, accessKey string, PostData UploadPostMeta) ([]byte, error) {
+func UploadPost(BasePath string, headers map[string]string, PostData UploadPostMeta) ([]byte, error) {
 	URL := BasePath + "/api/upload"
 	// Convert PostData to JSON
 	PostDataJson, err := json.Marshal(PostData)
 	if err != nil {
 		return nil, err
-	}
-
-	headers := map[string]string{
-		"X-Api-Key":    accessKey,
-		"Content-Type": "application/json",
 	}
 
 	POSTStruct := URLRequest{
@@ -114,17 +109,12 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	}
 }
 
-func UploadProcessPost(BasePath string, accessKey string, PostData UploadProcessMeta) ([]byte, error) {
+func UploadProcessPost(BasePath string, headers map[string]string, PostData UploadProcessMeta) ([]byte, error) {
 	URL := BasePath + "/api/upload/process"
 	// Convert PostData to JSON
 	PostDataJson, err := json.Marshal(PostData)
 	if err != nil {
 		return nil, err
-	}
-
-	headers := map[string]string{
-		"X-Api-Key":    accessKey,
-		"Content-Type": "application/json",
 	}
 
 	POSTStruct := URLRequest{
