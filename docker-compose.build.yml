@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: ghcr.io/minoplhy/chibisafe-netproxy:latest
+    build: .
     ports:
       - "4040:4040"
     volumes:
