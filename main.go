@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/minoplhy/chibisafe_netstorage_middleman/src/handler"
+	"github.com/minoplhy/chibisafe-netproxy/src/handler"
 )
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
