@@ -90,6 +90,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		"Content-Type": "application/json",
 	}
 
+	// Check if client sent X-Real-IP Header
 	if r.Header.Get("X-Real-IP") != "" && handler.IsInternalIP(r.RemoteAddr) {
 		UploadHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}
@@ -134,6 +135,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		"Content-Type": "application/json",
 	}
 
+	// Check if client sent X-Real-IP Header
 	if r.Header.Get("X-Real-IP") != "" && handler.IsInternalIP(r.RemoteAddr) {
 		ProcessHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}

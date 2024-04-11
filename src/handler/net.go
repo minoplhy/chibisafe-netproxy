@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
+// Check if request IP Address is in internal ranges
 func IsInternalIP(ip string) bool {
-
 	parts := strings.Split(ip, ":")
 	ip = parts[0]
 
