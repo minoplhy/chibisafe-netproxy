@@ -88,7 +88,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	UploadHeaders := map[string]string{
 		"X-Api-Key":    API_Key,
 		"Content-Type": "application/json",
-		"X-Real-IP":    r.RemoteAddr,
+	}
+
+	if handler.IsInternalIP(r.RemoteAddr) {
+		UploadHeaders["X-Real-IP"] = r.RemoteAddr
 	}
 
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, UploadHeaders, PostData)
@@ -129,7 +132,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	ProcessHeaders := map[string]string{
 		"X-Api-Key":    API_Key,
 		"Content-Type": "application/json",
-		"X-Real-IP":    r.RemoteAddr,
+	}
+
+	if handler.IsInternalIP(r.RemoteAddr) {
+		ProcessHeaders["X-Real-IP"] = r.RemoteAddr
 	}
 
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, ProcessHeaders, PostProcessData)
