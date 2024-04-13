@@ -77,7 +77,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	tempfilepath := handler.GetTempFilename(fileHeader.Filename)
 	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully obtained temporary Filename")
 	handler.SaveFile(tempfilepath, file)
-	handler.DiscardFile(file)
 
 	PostData := handler.UploadPostMeta{
 		ContentType: fileHeader.Header.Get("Content-Type"),
@@ -152,7 +151,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
 		handler.ErrorLogBuilder([]string{}, err.Error())
-
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))

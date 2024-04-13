@@ -53,11 +53,13 @@ func UploadPost(BasePath string, headers map[string]string, PostData UploadPostM
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		BodyRead, err := io.ReadAll(resp.Body)
+		buffer := bytes.NewBuffer(nil)
+		_, err := io.Copy(buffer, resp.Body)
+		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
-		return BodyRead, nil
+		return buffer.Bytes(), nil
 	} else {
 		return nil, err
 	}
@@ -96,14 +98,15 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		BodyRead, err := io.ReadAll(resp.Body)
+		buffer := bytes.NewBuffer(nil)
+		_, err := io.Copy(buffer, resp.Body)
+		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
-		return BodyRead, nil
+		return buffer.Bytes(), nil
 	} else {
 		return nil, err
 	}
@@ -129,11 +132,13 @@ func UploadProcessPost(BasePath string, headers map[string]string, PostData Uplo
 	}
 
 	if resp.StatusCode == http.StatusOK {
-		BodyRead, err := io.ReadAll(resp.Body)
+		buffer := bytes.NewBuffer(nil)
+		_, err := io.Copy(buffer, resp.Body)
+		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
-		return BodyRead, nil
+		return buffer.Bytes(), nil
 	} else {
 		return nil, err
 	}

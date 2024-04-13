@@ -75,5 +75,5 @@ func HTTPClientDo(Request *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	return response, err
+	return response, nil
 }
