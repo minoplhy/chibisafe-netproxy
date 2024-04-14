@@ -55,15 +55,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// of the file input on the frontend
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		if err.Error() == "http: request body too large" {
+		switch err.Error() {
+		case "http: request body too large":
 			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
 			handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
-			return
-		} else {
+		default:
 			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
 			handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
-			return
 		}
+		return
 	}
 	defer file.Close()
 
@@ -93,16 +93,22 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// POST to chibisafe's /api/upload
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, UploadHeaders, PostData)
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr, tempfilepath}, err.Error())
+		switch err.Error() {
+		default:
+			http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
+			handler.ErrorLogBuilder([]string{r.RemoteAddr, tempfilepath}, err.Error())
+		}
 		return
 	}
 
 	var chibisafe_Response_Metadata handler.UploadResponseMeta
 	err = json.Unmarshal(chibisafe_post, &chibisafe_Response_Metadata)
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{}, err.Error())
+		switch err.Error() {
+		default:
+			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorLogBuilder([]string{}, err.Error())
+		}
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully obtained PUT keys")
@@ -110,8 +116,11 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// PUT File to Network Storage
 	_, err = handler.NetworkStoragePut(chibisafe_Response_Metadata.URL, PostData.ContentType, tempfilepath)
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		switch err.Error() {
+		default:
+			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		}
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully PUT file to Network Storage")
@@ -140,16 +149,22 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// POST to chibisafe's /api/upload/process
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, ProcessHeaders, PostProcessData)
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		switch err.Error() {
+		default:
+			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		}
 		return
 	}
 
 	var PostProcessResponse handler.UploadProcessResponseMeta
 	err = json.Unmarshal(PostProcess, &PostProcessResponse)
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{}, err.Error())
+		switch err.Error() {
+		default:
+			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorLogBuilder([]string{}, err.Error())
+		}
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))
@@ -157,7 +172,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// Delete Temporary file
 	err = handler.DeleteFile(tempfilepath)
 	if err != nil {
-		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		switch err.Error() {
+		default:
+			handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
+		}
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully Deleted Temporary file from local disk")
