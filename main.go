@@ -25,11 +25,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		maxUploadSize = 10 * 1024 * 1024 // 10 MB
 	}
 
-	// Set Response Content-Type
-	w.Header().Set("Content-Type", "application/json")
-
 	if r.Method != "POST" {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusMethodNotAllowed, "Method not allowed"), http.StatusMethodNotAllowed)
+		handler.ErrorResponseBuild(w, http.StatusMethodNotAllowed, "Method not allowed")
 		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Method not allowed")
 		return
 	}
@@ -37,14 +34,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// Check for x-api-key header
 	API_Key := r.Header.Get("x-api-key")
 	if API_Key == "" {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "X-api-key is empty!"), http.StatusBadRequest)
+		handler.ErrorResponseBuild(w, http.StatusBadRequest, "X-api-key is empty!")
 		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "X-api-key is empty!")
 		return
 	}
 
 	// Validate x-api-key
 	if !handler.Check_API_Key(Chibisafe_basepath, API_Key) {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusUnauthorized, "Failure to validate X-API-Key"), http.StatusUnauthorized)
+		handler.ErrorResponseBuild(w, http.StatusUnauthorized, "Failure to validate X-API-Key")
 		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Failure to validate X-API-Key")
 		return
 	}
@@ -60,10 +57,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		case "http: request body too large":
-			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
+			handler.ErrorResponseBuild(w, http.StatusRequestEntityTooLarge, "Request Body is too large!")
 			handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorResponseBuild(w, http.StatusInternalServerError, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
 		}
 		return
@@ -98,7 +95,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
+			handler.ErrorResponseBuild(w, http.StatusBadRequest, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{r.RemoteAddr, tempfilepath}, err.Error())
 		}
 		return
@@ -109,7 +106,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorResponseBuild(w, http.StatusInternalServerError, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{}, err.Error())
 		}
 		return
@@ -121,7 +118,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorResponseBuild(w, http.StatusInternalServerError, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		}
 		return
@@ -154,7 +151,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorResponseBuild(w, http.StatusInternalServerError, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		}
 		return
@@ -165,7 +162,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.Error() {
 		default:
-			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorResponseBuild(w, http.StatusInternalServerError, "Something went wrong!")
 			handler.ErrorLogBuilder([]string{}, err.Error())
 		}
 		return
@@ -185,7 +182,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Response JSON to client
 	JsonResponse, _ := json.Marshal(PostProcessResponse)
-	fmt.Fprintf(w, "%s", JsonResponse)
+	handler.ResponseBuild(w, "application/json", JsonResponse)
 }
 
 func main() {
