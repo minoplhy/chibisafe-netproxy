@@ -46,26 +46,19 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set Max Body read size
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxUploadSize))
-
-	// ParseMultipartForm parses a request body as multipart/form-data
-	err = r.ParseMultipartForm(int64(maxUploadSize))
-	if err != nil {
-		if err.Error() == "http: request body too large" {
-			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
-			handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
-			return
-		}
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
-		return
-	}
 
 	// truncated for brevity
 
 	// The argument to FormFile must match the name attribute
 	// of the file input on the frontend
 	file, fileHeader, err := r.FormFile("file")
+	if err.Error() == "http: request body too large" {
+		http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
+		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
+		return
+	}
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
 		handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
@@ -76,6 +69,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	handler.InfoLogBuilder([]string{r.RemoteAddr}, "Received a successful POST")
 	tempfilepath := handler.GetTempFilename(fileHeader.Filename)
 	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully obtained temporary Filename")
+
+	// Save Temporary file
 	handler.SaveFile(tempfilepath, file)
 
 	PostData := handler.UploadPostMeta{
@@ -94,6 +89,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		UploadHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}
 
+	// POST to chibisafe's /api/upload
 	chibisafe_post, err := handler.UploadPost(Chibisafe_basepath, UploadHeaders, PostData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusBadRequest, "Something went wrong!"), http.StatusBadRequest)
@@ -110,6 +106,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, "Successfully obtained PUT keys")
 
+	// PUT File to Network Storage
 	_, err = handler.NetworkStoragePut(chibisafe_Response_Metadata.URL, PostData.ContentType, tempfilepath)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
@@ -139,6 +136,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		ProcessHeaders["X-Real-IP"] = r.Header.Get("X-Real-IP")
 	}
 
+	// POST to chibisafe's /api/upload/process
 	PostProcess, err := handler.UploadProcessPost(Chibisafe_basepath, ProcessHeaders, PostProcessData)
 	if err != nil {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
@@ -155,12 +153,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, PostProcessResponse.Name, tempfilepath}, fmt.Sprintf("Successfully Processed Response with UUID: %s", PostProcessResponse.UUID))
 
+	// Delete Temporary file
 	err = handler.DeleteFile(tempfilepath)
 	if err != nil {
 		handler.ErrorLogBuilder([]string{r.RemoteAddr, chibisafe_Response_Metadata.Identifier, tempfilepath}, err.Error())
 		return
 	}
 	handler.InfoLogBuilder([]string{r.RemoteAddr, tempfilepath}, "Successfully Deleted Temporary file from local disk")
+
+	// Response JSON to client
 	JsonResponse, _ := json.Marshal(PostProcessResponse)
 	fmt.Fprintf(w, "%s", JsonResponse)
 }
