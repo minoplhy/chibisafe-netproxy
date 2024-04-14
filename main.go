@@ -25,6 +25,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		maxUploadSize = 10 * 1024 * 1024 // 10 MB
 	}
 
+	// Set Response Content-Type
+	w.Header().Set("Content-Type", "application/json")
+
 	if r.Method != "POST" {
 		http.Error(w, handler.ErrorResponseBuild(http.StatusMethodNotAllowed, "Method not allowed"), http.StatusMethodNotAllowed)
 		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Method not allowed")
