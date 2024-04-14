@@ -54,15 +54,16 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	// The argument to FormFile must match the name attribute
 	// of the file input on the frontend
 	file, fileHeader, err := r.FormFile("file")
-	if err.Error() == "http: request body too large" {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
-		return
-	}
 	if err != nil {
-		http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
-		handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
-		return
+		if err.Error() == "http: request body too large" {
+			http.Error(w, handler.ErrorResponseBuild(http.StatusRequestEntityTooLarge, "Request Body is too large!"), http.StatusRequestEntityTooLarge)
+			handler.ErrorLogBuilder([]string{r.RemoteAddr}, "Request Body is too large!")
+			return
+		} else {
+			http.Error(w, handler.ErrorResponseBuild(http.StatusInternalServerError, "Something went wrong!"), http.StatusInternalServerError)
+			handler.ErrorLogBuilder([]string{r.RemoteAddr}, err.Error())
+			return
+		}
 	}
 	defer file.Close()
 
