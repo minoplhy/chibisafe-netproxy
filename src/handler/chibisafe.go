@@ -55,7 +55,6 @@ func UploadPost(BasePath string, headers map[string]string, PostData UploadPostM
 	if resp.StatusCode == http.StatusOK {
 		buffer := bytes.NewBuffer(nil)
 		_, err := io.Copy(buffer, resp.Body)
-		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
@@ -98,11 +97,11 @@ func NetworkStoragePut(URL string, ContentType string, filepath string) ([]byte,
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		buffer := bytes.NewBuffer(nil)
 		_, err := io.Copy(buffer, resp.Body)
-		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
@@ -130,11 +129,11 @@ func UploadProcessPost(BasePath string, headers map[string]string, PostData Uplo
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		buffer := bytes.NewBuffer(nil)
 		_, err := io.Copy(buffer, resp.Body)
-		defer resp.Body.Close()
 		if err != nil {
 			return nil, err
 		}
